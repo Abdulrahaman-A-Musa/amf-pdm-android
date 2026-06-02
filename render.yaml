@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: amf-pdm-analyser
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: dist
+    branch: main

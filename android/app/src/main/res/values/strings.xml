@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AMF PDM Analyser</string>
+    <string name="title_activity_main">AMF PDM Analyser</string>
+    <string name="package_name">org.eha.amfpdm</string>
+    <string name="custom_url_scheme">org.eha.amfpdm</string>
+</resources>

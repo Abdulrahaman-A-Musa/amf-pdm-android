@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #f0f4f8;
+    background-image:
+      radial-gradient(circle at 25% 10%, rgba(0,144,252,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 75% 90%, rgba(0,94,194,0.04) 0%, transparent 50%);
+    background-attachment: fixed;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #0090fc; }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200/80;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,144,252,0.06), 0 0 0 1px rgba(0,0,0,0.02);
+  }
+  .card-header {
+    @apply px-6 py-4 rounded-t-2xl flex items-center;
+    background: linear-gradient(135deg, #1a3a6b 0%, #0077e6 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .card-title {
+    @apply text-white font-semibold text-base tracking-wide;
+  }
+  .btn-primary {
+    @apply px-5 py-2.5 text-white rounded-xl font-semibold text-sm
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #0090fc 0%, #005ec2 100%);
+    box-shadow: 0 2px 8px rgba(0,144,252,0.35);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #007de0 0%, #004fa8 100%);
+    box-shadow: 0 4px 14px rgba(0,144,252,0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-medium text-sm
+           hover:bg-slate-50 hover:border-slate-300 transition-all duration-200;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700
+           placeholder-slate-400 bg-white transition-all duration-200;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04) inset;
+  }
+  .input-field:focus {
+    @apply outline-none border-primary-400;
+    box-shadow: 0 0 0 3px rgba(0,144,252,0.12), 0 1px 2px rgba(0,0,0,0.04) inset;
+  }
+  .select-field {
+    @apply w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700
+           bg-white transition-all duration-200 cursor-pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .select-field:focus {
+    @apply outline-none border-primary-400;
+    box-shadow: 0 0 0 3px rgba(0,144,252,0.12);
+  }
+  .badge-valid {
+    @apply px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #dcfce7; color: #166534;
+  }
+  .badge-flagged {
+    @apply px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: #fee2e2; color: #991b1b;
+  }
+  .stat-card {
+    @apply bg-white rounded-2xl p-5 border border-slate-200/80;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,144,252,0.06);
+  }
+  .tab-btn {
+    @apply px-5 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap;
+  }
+  .tab-btn-active {
+    @apply text-white;
+    background: linear-gradient(135deg, #1a3a6b 0%, #0077e6 100%);
+    box-shadow: 0 2px 8px rgba(0,144,252,0.30);
+  }
+  .tab-btn-inactive {
+    @apply text-slate-600 bg-white border border-slate-200 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50/50;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .table-container {
+    @apply w-full overflow-x-auto rounded-xl border border-slate-200;
+  }
+  table { @apply w-full text-sm; }
+  thead { @apply bg-slate-50; }
+  th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200;
+  }
+  td { @apply px-4 py-3 text-slate-700 border-b border-slate-100; }
+  tbody tr:hover { @apply bg-primary-50/30; }
+  .row-flagged td { background: rgba(254,226,226,0.35); }
+  .row-valid td { background: rgba(220,252,231,0.25); }
+  .animate-fade-in { animation: fadeIn 0.25s ease-out both; }
+  .animate-slide-up { animation: slideUp 0.3s ease-out both; }
+  .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4,0,0.6,1) infinite; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
