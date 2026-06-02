@@ -30,7 +30,10 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y openjdk-21-jdk
-          java -version
+          echo "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> $GITHUB_ENV
+          echo "/usr/lib/jvm/java-21-openjdk-amd64/bin" >> $GITHUB_PATH
+          /usr/lib/jvm/java-21-openjdk-amd64/bin/java -version
+          /usr/lib/jvm/java-21-openjdk-amd64/bin/javac -version
 
       - name: Install npm dependencies
         run: npm install
