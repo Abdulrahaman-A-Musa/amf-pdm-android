@@ -5,9 +5,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,10 +13,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Show Node.js version (pre-installed on runner)
+        run: node --version && npm --version
 
       - name: Install dependencies
         run: npm install
@@ -39,7 +34,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Fix Gradle wrapper (Windows line endings + permissions)
+      - name: Fix Gradle wrapper line endings and permissions
         run: |
           sed -i 's/\r//' android/gradlew
           chmod +x android/gradlew
