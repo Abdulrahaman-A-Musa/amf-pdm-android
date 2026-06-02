@@ -26,10 +26,10 @@ jobs:
           echo "$NVM_DIR/versions/node/$NODE_VER/bin" >> $GITHUB_PATH
           node -v && npm -v
 
-      - name: Install Java 17
+      - name: Install Java 21
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y openjdk-17-jdk
+          sudo apt-get install -y openjdk-21-jdk
           java -version
 
       - name: Install npm dependencies
