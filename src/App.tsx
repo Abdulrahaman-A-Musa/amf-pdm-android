@@ -5,8 +5,6 @@ import AppHeader from './components/AppHeader';
 import Dashboard from './components/Dashboard';
 import DataComparison from './components/DataComparison';
 import DataQuality from './components/DataQuality';
-import PivotTable from './components/PivotTable';
-import FrequencyAnalysis from './components/FrequencyAnalysis';
 
 export default function App() {
   const { isLoggedIn, activeTab, login, logout, setActiveTab } = useAppStore();
@@ -28,8 +26,6 @@ export default function App() {
           <div className="animate-fade-in">
             {activeTab === 'comparison' && <DataComparison />}
             {activeTab === 'quality'    && <DataQuality />}
-            {activeTab === 'pivot'      && <PivotTable />}
-            {activeTab === 'frequency'  && <FrequencyAnalysis />}
           </div>
         </main>
       )}

@@ -90,7 +90,7 @@ export interface CommunityTarget {
   target: number;
 }
 
-export type TabId = 'dashboard' | 'comparison' | 'quality' | 'pivot' | 'frequency';
+export type TabId = 'dashboard' | 'comparison' | 'quality';
 
 export interface AppState {
   isLoggedIn: boolean;

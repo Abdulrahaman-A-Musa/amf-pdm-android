@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Shield, LogOut, GitCompare, CheckSquare, Table2, BarChart,
+  Shield, LogOut, GitCompare, CheckSquare,
   LayoutDashboard, Maximize2, Minimize2,
 } from 'lucide-react';
 import { TabId } from '../types';
@@ -16,8 +16,6 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard',  label: 'Dashboard',          icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: 'comparison', label: 'Data Comparison',     icon: <GitCompare className="w-4 h-4" /> },
   { id: 'quality',    label: 'Data Quality Check',  icon: <CheckSquare className="w-4 h-4" /> },
-  { id: 'pivot',      label: 'Pivot Table',          icon: <Table2 className="w-4 h-4" /> },
-  { id: 'frequency',  label: 'Frequency Analysis',  icon: <BarChart className="w-4 h-4" /> },
 ];
 
 const STATES = ['Zamfara', 'Bauchi', 'Plateau'];

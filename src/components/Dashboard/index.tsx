@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -161,10 +161,9 @@ export default function Dashboard() {
   const { mainState, revisitState, syncMain, syncRevisit } = useKoboSync();
   const hasKoboMain    = !!KOBO_DATASETS.main.assetId;
   const hasKoboRevisit = !!KOBO_DATASETS.revisit.assetId;
-  const [syncMode, setSyncMode] = useState<'kobo' | 'upload'>(
-    hasKoboMain || hasKoboRevisit ? 'kobo' : 'upload'
-  );
-  const autoSynced = useRef(false);
+  // Always start in upload mode on mobile — KoBoSync requires a proxy server
+  // that is not available on device. User can switch manually if needed.
+  const [syncMode, setSyncMode] = useState<'kobo' | 'upload'>('upload');
 
   const [mode, setMode]               = useState<'main' | 'revisit'>('main');
   const [lgaFilter, setLgaFilter]     = useState('All');
@@ -457,14 +456,8 @@ export default function Dashboard() {
     if (rows) setRevisitData(rows as DataRow[]);
   }, [syncRevisit, setRevisitData]);
 
-  useEffect(() => {
-    if (autoSynced.current) return;
-    autoSynced.current = true;
-    if (syncMode !== 'kobo') return;
-    if (hasKoboMain    && !mainData)    handleSyncMain();
-    if (hasKoboRevisit && !revisitData) handleSyncRevisit();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // No auto-sync on mount for the mobile/Android app.
+  // KoBoSync requires a proxy server; users trigger it manually via the sidebar.
 
   const switchMode = (m: 'main' | 'revisit') => {
     setMode(m);
