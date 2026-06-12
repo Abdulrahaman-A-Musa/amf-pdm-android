@@ -10,6 +10,13 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
   },
+  plugins: {
+    // Route fetch/XHR through the native Android HTTP stack so that
+    // requests to kf.kobotoolbox.org bypass WebView CORS restrictions.
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
 };
 
 export default config;
