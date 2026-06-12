@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DataRow, ValidationRow, TabId } from '../types';
+import { DataRow, ValidationRow, TabId, CommunityTarget } from '../types';
 
 interface AppStore {
   isLoggedIn: boolean;
@@ -9,6 +9,8 @@ interface AppStore {
   qualityData: DataRow[] | null;
   validationData: ValidationRow[] | null;
   isProcessing: boolean;
+  selectedState: string;
+  communityTargets: Record<string, CommunityTarget[]>;
 
   login: () => void;
   logout: () => void;
@@ -18,16 +20,20 @@ interface AppStore {
   setQualityData: (data: DataRow[] | null) => void;
   setValidationData: (data: ValidationRow[] | null) => void;
   setProcessing: (val: boolean) => void;
+  setSelectedState: (state: string) => void;
+  setCommunityTargets: (state: string, data: CommunityTarget[]) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
   isLoggedIn: false,
-  activeTab: 'comparison',
+  activeTab: 'dashboard',
   mainData: null,
   revisitData: null,
   qualityData: null,
   validationData: null,
   isProcessing: false,
+  selectedState: 'Bauchi',
+  communityTargets: {},
 
   login: () => set({ isLoggedIn: true }),
   logout: () =>
@@ -44,4 +50,7 @@ export const useAppStore = create<AppStore>((set) => ({
   setQualityData: (data) => set({ qualityData: data }),
   setValidationData: (data) => set({ validationData: data }),
   setProcessing: (val) => set({ isProcessing: val }),
+  setSelectedState: (state) => set({ selectedState: state }),
+  setCommunityTargets: (state, data) =>
+    set((s) => ({ communityTargets: { ...s.communityTargets, [state]: data } })),
 }));

@@ -83,7 +83,14 @@ export interface PivotResult {
   validSubmissions: number;
 }
 
-export type TabId = 'comparison' | 'quality' | 'pivot' | 'frequency';
+export interface CommunityTarget {
+  lga: string;
+  ward: string;
+  community: string;
+  target: number;
+}
+
+export type TabId = 'dashboard' | 'comparison' | 'quality' | 'pivot' | 'frequency';
 
 export interface AppState {
   isLoggedIn: boolean;
@@ -93,4 +100,6 @@ export interface AppState {
   qualityData: DataRow[] | null;
   validationData: ValidationRow[] | null;
   isProcessing: boolean;
+  selectedState: string;
+  communityTargets: Record<string, CommunityTarget[]>;
 }
