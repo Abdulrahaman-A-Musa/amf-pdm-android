@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Upload, TrendingUp, AlertCircle, CheckCircle2, Filter, Download } from 'lucide-react';
+import { Upload, TrendingUp, AlertCircle, CheckCircle2, Filter, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { readExcelFile } from '../../utils/excelUtils';
 import { runSimilarityCheck, TARGET_VARIABLES } from '../../utils/similarity';
@@ -67,6 +67,8 @@ export default function DataComparison() {
   const { mainData, revisitData, setMainData, setRevisitData } = useAppStore();
   const [loading, setLoading] = useState({ main: false, revisit: false });
   const [fileNames, setFileNames] = useState({ main: '', revisit: '' });
+  const [uploadOpen, setUploadOpen] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(true);
   const [lgaFilter, setLgaFilter] = useState('All');
   const [varFilter, setVarFilter] = useState('All');
   const [matchFilter, setMatchFilter] = useState<'all' | 'match' | 'mismatch'>('all');
@@ -140,58 +142,70 @@ export default function DataComparison() {
     <div className="space-y-6">
       {/* Upload */}
       <div className="card">
-        <div className="card-header flex items-center gap-2">
-          <Upload className="w-5 h-5 text-white" />
-          <span className="card-title">Upload Survey Files</span>
+        <div className="card-header flex items-center justify-between gap-2 cursor-pointer select-none"
+          onClick={() => setUploadOpen(o => !o)}>
+          <div className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-white" />
+            <span className="card-title">Upload Survey Files</span>
+          </div>
+          {uploadOpen ? <ChevronUp className="w-4 h-4 text-white/70" /> : <ChevronDown className="w-4 h-4 text-white/70" />}
         </div>
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FileUploadCard
-            label="Upload Main Data"
-            onFile={(f) => handleFile(f, 'main')}
-            fileName={fileNames.main}
-            loaded={!!mainData}
-          />
-          {loading.main && <p className="text-xs text-primary-500">Processing...</p>}
-          <FileUploadCard
-            label="Upload Revisit Data"
-            onFile={(f) => handleFile(f, 'revisit')}
-            fileName={fileNames.revisit}
-            loaded={!!revisitData}
-          />
-          {loading.revisit && <p className="text-xs text-primary-500">Processing...</p>}
-        </div>
+        {uploadOpen && (
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FileUploadCard
+              label="Upload Main Data"
+              onFile={(f) => handleFile(f, 'main')}
+              fileName={fileNames.main}
+              loaded={!!mainData}
+            />
+            {loading.main && <p className="text-xs text-primary-500">Processing...</p>}
+            <FileUploadCard
+              label="Upload Revisit Data"
+              onFile={(f) => handleFile(f, 'revisit')}
+              fileName={fileNames.revisit}
+              loaded={!!revisitData}
+            />
+            {loading.revisit && <p className="text-xs text-primary-500">Processing...</p>}
+          </div>
+        )}
       </div>
 
       {/* Filter */}
       {mainData && (
         <div className="card">
-          <div className="card-header flex items-center gap-2">
-            <Filter className="w-5 h-5 text-white" />
-            <span className="card-title">Filters</span>
+          <div className="card-header flex items-center justify-between gap-2 cursor-pointer select-none"
+            onClick={() => setFilterOpen(o => !o)}>
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-white" />
+              <span className="card-title">Filters</span>
+            </div>
+            {filterOpen ? <ChevronUp className="w-4 h-4 text-white/70" /> : <ChevronDown className="w-4 h-4 text-white/70" />}
           </div>
-          <div className="p-4 flex flex-wrap gap-4">
-            <div className="flex-1 min-w-40">
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Filter LGA</label>
-              <select className="select-field" value={lgaFilter} onChange={(e) => { setLgaFilter(e.target.value); setPage(0); }}>
-                {lgaChoices.map((c) => <option key={c}>{c}</option>)}
-              </select>
+          {filterOpen && (
+            <div className="p-4 flex flex-wrap gap-4">
+              <div className="flex-1 min-w-40">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Filter LGA</label>
+                <select className="select-field" value={lgaFilter} onChange={(e) => { setLgaFilter(e.target.value); setPage(0); }}>
+                  {lgaChoices.map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-40">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Variable</label>
+                <select className="select-field" value={varFilter} onChange={(e) => { setVarFilter(e.target.value); setPage(0); }}>
+                  <option value="All">All Variables</option>
+                  {TARGET_VARIABLES.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-w-40">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Match Status</label>
+                <select className="select-field" value={matchFilter} onChange={(e) => { setMatchFilter(e.target.value as 'all' | 'match' | 'mismatch'); setPage(0); }}>
+                  <option value="all">All Records</option>
+                  <option value="match">Matches Only</option>
+                  <option value="mismatch">Mismatches Only</option>
+                </select>
+              </div>
             </div>
-            <div className="flex-1 min-w-40">
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Variable</label>
-              <select className="select-field" value={varFilter} onChange={(e) => { setVarFilter(e.target.value); setPage(0); }}>
-                <option value="All">All Variables</option>
-                {TARGET_VARIABLES.map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
-            <div className="flex-1 min-w-40">
-              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Match Status</label>
-              <select className="select-field" value={matchFilter} onChange={(e) => { setMatchFilter(e.target.value as 'all' | 'match' | 'mismatch'); setPage(0); }}>
-                <option value="all">All Records</option>
-                <option value="match">Matches Only</option>
-                <option value="mismatch">Mismatches Only</option>
-              </select>
-            </div>
-          </div>
+          )}
         </div>
       )}
 

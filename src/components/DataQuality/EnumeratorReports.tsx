@@ -258,17 +258,17 @@ function ReportCard({ stat, defaultOpen = false }: { stat: EnumeratorStats; defa
 type PerformanceFilter = 'all' | 'very_good' | 'needs_improvement' | 'requires_training' | 'dismissal';
 
 function getPerformanceTier(score: number): PerformanceFilter {
-  if (score >= 96) return 'very_good';
-  if (score >= 71) return 'needs_improvement';
+  if (score >= 80) return 'very_good';
+  if (score >= 60) return 'needs_improvement';
   if (score >= 40) return 'requires_training';
   return 'dismissal';
 }
 
 const PERFORMANCE_OPTIONS: { value: PerformanceFilter; label: string }[] = [
   { value: 'all',               label: 'All Performance Levels' },
-  { value: 'very_good',         label: '🌟 Very Good (≥96%)' },
-  { value: 'needs_improvement', label: '⚠️ Needs Improvement (71–95%)' },
-  { value: 'requires_training', label: '📚 Requires Training (40–70%)' },
+  { value: 'very_good',         label: '🌟 Very Good (≥80%)' },
+  { value: 'needs_improvement', label: '⚠️ Needs Improvement (60–79%)' },
+  { value: 'requires_training', label: '📚 Requires Training (40–59%)' },
   { value: 'dismissal',         label: '❌ Recommended for Dismissal (<40%)' },
 ];
 
@@ -362,10 +362,10 @@ export default function EnumeratorReports({ stats, onDownload, availableColumns 
         {/* Tier summary — clickable */}
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 border-t border-slate-100">
           {([
-            { tier: 'very_good'         as PerformanceFilter, label: '🌟 Very Good',                count: tierCounts.very_good,         color: '#16a34a', bg: '#dcfce7' },
-            { tier: 'needs_improvement' as PerformanceFilter, label: '⚠️ Needs Improvement',         count: tierCounts.needs_improvement, color: '#d97706', bg: '#fef3c7' },
-            { tier: 'requires_training' as PerformanceFilter, label: '📚 Requires Training',         count: tierCounts.requires_training, color: '#ea580c', bg: '#ffedd5' },
-            { tier: 'dismissal'         as PerformanceFilter, label: '❌ For Dismissal',             count: tierCounts.dismissal,         color: '#dc2626', bg: '#fee2e2' },
+            { tier: 'very_good'         as PerformanceFilter, label: '🌟 Very Good (≥80%)',          count: tierCounts.very_good,         color: '#16a34a', bg: '#dcfce7' },
+            { tier: 'needs_improvement' as PerformanceFilter, label: '⚠️ Needs Improve (60–79%)',    count: tierCounts.needs_improvement, color: '#d97706', bg: '#fef3c7' },
+            { tier: 'requires_training' as PerformanceFilter, label: '📚 Req. Training (40–59%)',    count: tierCounts.requires_training, color: '#ea580c', bg: '#ffedd5' },
+            { tier: 'dismissal'         as PerformanceFilter, label: '❌ For Dismissal (<40%)',       count: tierCounts.dismissal,         color: '#dc2626', bg: '#fee2e2' },
           ] as const).map(({ tier, label, count, color, bg }) => (
             <button
               key={tier}

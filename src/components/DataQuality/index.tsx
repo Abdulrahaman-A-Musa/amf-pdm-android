@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Upload, CheckSquare, Map, Users, Table, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, CheckSquare, Map, Users, Table, AlertCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { readExcelFile, getUniqueValues } from '../../utils/excelUtils';
 import { validateData, getValidationSummary, getMapData } from '../../utils/dataValidation';
@@ -23,6 +23,7 @@ const subTabs: { id: SubTab; label: string; icon: React.ReactNode }[] = [
 export default function DataQuality() {
   const { qualityData, validationData, setQualityData, setValidationData, isProcessing, setProcessing } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>('summary');
+  const [panelOpen, setPanelOpen] = useState<boolean>(() => !validationData);
   const [fileName, setFileName] = useState('');
   const [lgaFilter, setLgaFilter] = useState('All');
   const [showFlaggedOnly, setShowFlaggedOnly] = useState(false);
@@ -150,44 +151,56 @@ export default function DataQuality() {
     <div className="space-y-4">
       {/* Upload + Filters */}
       <div className="card">
-        <div className="card-header flex items-center gap-2">
-          <Upload className="w-5 h-5 text-white" />
-          <span className="card-title">Upload & Filter</span>
-        </div>
-        <div className="p-4 flex flex-wrap gap-4 items-end">
-          {/* File upload */}
-          <div className="flex-1 min-w-56">
-            <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Excel File</label>
-            <label className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-slate-300 hover:border-primary-400 rounded-xl px-4 py-3 transition-all group">
-              <Upload className="w-4 h-4 text-slate-400 group-hover:text-primary-500 shrink-0" />
-              <span className="text-sm text-slate-500 truncate">{fileName || 'Click to upload .xlsx / .xls'}</span>
-              <input type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-            </label>
+        <div className="card-header flex items-center justify-between gap-2 cursor-pointer select-none"
+          onClick={() => setPanelOpen(o => !o)}>
+          <div className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-white" />
+            <span className="card-title">Upload & Filter</span>
           </div>
-
-          {/* LGA filter */}
-          <div className="min-w-40 flex-1">
-            <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">LGA Filter</label>
-            <select className="select-field" value={lgaFilter} onChange={(e) => setLgaFilter(e.target.value)}>
-              {lgaChoices.map((c) => <option key={c}>{c}</option>)}
-            </select>
+          <div className="flex items-center gap-2">
+            {validationData && (
+              <span className="text-white/70 text-xs">{filteredData.length.toLocaleString()} records · {summary.qualityScore.toFixed(1)}%</span>
+            )}
+            {panelOpen ? <ChevronUp className="w-4 h-4 text-white/70" /> : <ChevronDown className="w-4 h-4 text-white/70" />}
           </div>
-
-          {/* Date range */}
-          <div className="min-w-40 flex-1">
-            <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Date From</label>
-            <input type="date" className="input-field" value={dateRange.start} onChange={(e) => setDateRange((p) => ({ ...p, start: e.target.value }))} />
-          </div>
-          <div className="min-w-40 flex-1">
-            <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Date To</label>
-            <input type="date" className="input-field" value={dateRange.end} onChange={(e) => setDateRange((p) => ({ ...p, end: e.target.value }))} />
-          </div>
-          {(dateRange.start || dateRange.end) && (
-            <button className="btn-secondary text-xs py-2.5" onClick={() => setDateRange({ start: '', end: '' })}>Reset Dates</button>
-          )}
         </div>
 
-        {/* Status bar */}
+        {panelOpen && (
+          <div className="p-4 flex flex-wrap gap-4 items-end">
+            {/* File upload */}
+            <div className="flex-1 min-w-56">
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Excel File</label>
+              <label className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-slate-300 hover:border-primary-400 rounded-xl px-4 py-3 transition-all group">
+                <Upload className="w-4 h-4 text-slate-400 group-hover:text-primary-500 shrink-0" />
+                <span className="text-sm text-slate-500 truncate">{fileName || 'Click to upload .xlsx / .xls'}</span>
+                <input type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              </label>
+            </div>
+
+            {/* LGA filter */}
+            <div className="min-w-40 flex-1">
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">LGA Filter</label>
+              <select className="select-field" value={lgaFilter} onChange={(e) => setLgaFilter(e.target.value)}>
+                {lgaChoices.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {/* Date range */}
+            <div className="min-w-40 flex-1">
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Date From</label>
+              <input type="date" className="input-field" value={dateRange.start} onChange={(e) => setDateRange((p) => ({ ...p, start: e.target.value }))} />
+            </div>
+            <div className="min-w-40 flex-1">
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Date To</label>
+              <input type="date" className="input-field" value={dateRange.end} onChange={(e) => setDateRange((p) => ({ ...p, end: e.target.value }))} />
+            </div>
+            {(dateRange.start || dateRange.end) && (
+              <button className="btn-secondary text-xs py-2.5" onClick={() => setDateRange({ start: '', end: '' })}>Reset Dates</button>
+            )}
+          </div>
+        )}
+
+        {/* Status bar — always visible when data is loaded */}
         {validationData && (
           <div className="px-4 pb-4">
             <div className="flex items-center gap-2 text-sm bg-primary-50 text-primary-700 px-4 py-2.5 rounded-xl border border-primary-100">

@@ -3,6 +3,39 @@ import { DataRow, ValidationRow, ValidationSummary } from '../types';
 const LAT_COL = '_FirstVisitGPS_latitude';
 const LON_COL = '_FirstVisitGPS_longitude';
 
+const LAT_CANDIDATES = [
+  '_FirstVisitGPS_latitude', 'FirstVisitGPS_latitude',
+  '_GPS_latitude', 'GPS_latitude', 'gps_latitude',
+  '_latitude', 'latitude', 'Latitude', 'lat',
+];
+const LON_CANDIDATES = [
+  '_FirstVisitGPS_longitude', 'FirstVisitGPS_longitude',
+  '_GPS_longitude', 'GPS_longitude', 'gps_longitude',
+  '_longitude', 'longitude', 'Longitude', 'lon',
+];
+
+function detectGpsColumns(row: Record<string, unknown>): { lat: string; lon: string } {
+  let latCol = LAT_COL;
+  let lonCol = LON_COL;
+  for (const c of LAT_CANDIDATES) {
+    if (c in row) { latCol = c; break; }
+  }
+  if (!(latCol in row)) {
+    for (const key of Object.keys(row)) {
+      if (key.toLowerCase().includes('latitude')) { latCol = key; break; }
+    }
+  }
+  for (const c of LON_CANDIDATES) {
+    if (c in row) { lonCol = c; break; }
+  }
+  if (!(lonCol in row)) {
+    for (const key of Object.keys(row)) {
+      if (key.toLowerCase().includes('longitude')) { lonCol = key; break; }
+    }
+  }
+  return { lat: latCol, lon: lonCol };
+}
+
 const START_COL_CANDIDATES = [
   'calc_first_visit_last_change',
   'calc_consent_last_change',
@@ -79,6 +112,10 @@ export function validateData(df: DataRow[]): ValidationRow[] {
   const startCol = findColumn(firstRow, START_COL_CANDIDATES);
   const endCol = findColumn(firstRow, END_COL_CANDIDATES);
 
+  // Auto-detect GPS columns
+  const { lat: LAT_COL_USE, lon: LON_COL_USE } = detectGpsColumns(firstRow);
+  console.log('[AMF-PDM] GPS cols:', LAT_COL_USE, LON_COL_USE);
+
   console.log('[AMF-PDM] All columns:', Object.keys(firstRow));
   console.log('[AMF-PDM] Detected startCol:', startCol, '→', firstRow[startCol ?? '']);
   console.log('[AMF-PDM] Detected endCol:  ', endCol,   '→', firstRow[endCol ?? '']);
@@ -131,8 +168,8 @@ export function validateData(df: DataRow[]): ValidationRow[] {
 
   // 3. GPS Check
   result.forEach((row) => {
-    const lat = row[LAT_COL];
-    const lon = row[LON_COL];
+    const lat = row[LAT_COL_USE];
+    const lon = row[LON_COL_USE];
     const missing =
       lat === null || lat === undefined || lat === '' ||
       lon === null || lon === undefined || lon === '' ||
@@ -155,8 +192,8 @@ export function validateData(df: DataRow[]): ValidationRow[] {
   // 5. Stackpoint Check — same exact lat/lon pair
   const coordMap = new Map<string, number[]>();
   result.forEach((row, idx) => {
-    const lat = row[LAT_COL];
-    const lon = row[LON_COL];
+    const lat = row[LAT_COL_USE];
+    const lon = row[LON_COL_USE];
     if (lat && lon && Number(lat) !== 0 && Number(lon) !== 0) {
       const key = `${lat}|${lon}`;
       if (!coordMap.has(key)) coordMap.set(key, []);
@@ -176,8 +213,8 @@ export function validateData(df: DataRow[]): ValidationRow[] {
   const validCoords = result
     .map((row, idx) => ({
       idx,
-      lat: parseFloat(String(row[LAT_COL] ?? '')),
-      lon: parseFloat(String(row[LON_COL] ?? '')),
+      lat: parseFloat(String(row[LAT_COL_USE] ?? '')),
+      lon: parseFloat(String(row[LON_COL_USE] ?? '')),
     }))
     .filter(({ lat, lon }) => !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0);
 
@@ -197,17 +234,16 @@ export function validateData(df: DataRow[]): ValidationRow[] {
     }
   }
 
-  // 7. Duplicate Check
-  const hhCounts = new Map<string, number>();
+  // 7. Duplicate Check — flag 2nd and subsequent occurrences only, retain first
+  const hhFirstSeen = new Set<string>();
   result.forEach((row) => {
-    const id = String(row['calc_household_id'] ?? '');
-    if (id) hhCounts.set(id, (hhCounts.get(id) ?? 0) + 1);
-  });
-  result.forEach((row) => {
-    const id = String(row['calc_household_id'] ?? '');
-    if (id && (hhCounts.get(id) ?? 0) > 1) {
+    const id = String(row['calc_household_id'] ?? '').trim();
+    if (!id) return;
+    if (hhFirstSeen.has(id)) {
       row.Duplicate_Check = '❌ Duplicate Data';
       row.Overall_Status = 'FLAGGED';
+    } else {
+      hhFirstSeen.add(id);
     }
   });
 
@@ -268,8 +304,7 @@ export function getValidationSummary(data: ValidationRow[]): ValidationSummary {
 }
 
 export function getMapData(data: ValidationRow[]) {
-  const LAT = LAT_COL;
-  const LON = LON_COL;
+  const { lat: LAT, lon: LON } = detectGpsColumns(data[0] ?? {});
   return data
     .filter(
       (r) => r.Stackpoint_Check !== 'PASS' || r.Proximity_Check !== 'PASS'

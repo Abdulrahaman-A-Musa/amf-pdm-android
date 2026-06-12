@@ -95,19 +95,19 @@ export default function AppHeader({ activeTab, onTabChange, onLogout }: Props) {
         </div>
 
         {/* Tab row */}
-        <nav className="flex gap-1 pb-3 overflow-x-auto">
+        <nav className="flex gap-1 pb-3">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex items-center gap-2 transition-all duration-200 rounded-xl px-4 py-2 text-sm whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-1.5 transition-all duration-200 rounded-xl px-2 py-2 text-xs font-medium min-w-0 ${
                 activeTab === tab.id
                   ? 'bg-amber-900 text-amber-50 font-semibold'
-                  : 'text-amber-950 hover:bg-amber-300/50 font-medium'
+                  : 'text-amber-950 hover:bg-amber-300/50'
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="truncate">{tab.label}</span>
             </button>
           ))}
         </nav>

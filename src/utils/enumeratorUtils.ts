@@ -152,8 +152,8 @@ export function buildEnumeratorStats(data: ValidationRow[]): EnumeratorStats[] {
 }
 
 export function getPerformanceBadge(score: number): { label: string; color: string; bg: string } {
-  if (score >= 96) return { label: '🌟 Very Good', color: '#16a34a', bg: '#dcfce7' };
-  if (score >= 71) return { label: '⚠️ Needs Improvement', color: '#d97706', bg: '#fef3c7' };
+  if (score >= 80) return { label: '🌟 Very Good', color: '#16a34a', bg: '#dcfce7' };
+  if (score >= 60) return { label: '⚠️ Needs Improvement', color: '#d97706', bg: '#fef3c7' };
   if (score >= 40) return { label: '📚 Requires Training', color: '#ea580c', bg: '#ffedd5' };
   return { label: '❌ Recommended for Dismissal', color: '#dc2626', bg: '#fee2e2' };
 }

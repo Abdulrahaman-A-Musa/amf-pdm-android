@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
-import { Upload, AlertCircle, RefreshCw, FileText, Download, Wifi, WifiOff, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Upload, AlertCircle, RefreshCw, FileText, Download, Wifi, WifiOff, CheckCircle2, XCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useKoboSync, SyncState } from '../../hooks/useKoboSync';
 import { KOBO_DATASETS } from '../../config/kobo';
 
@@ -166,6 +166,7 @@ export default function Dashboard() {
   );
   const autoSynced = useRef(false);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mode, setMode]               = useState<'main' | 'revisit'>('main');
   const [lgaFilter, setLgaFilter]     = useState('All');
   const [wardFilter, setWardFilter]   = useState('All');
@@ -608,7 +609,20 @@ export default function Dashboard() {
     <div className="flex" style={{ minHeight: 'calc(100vh - 7rem)' }}>
 
       {/* ── Sidebar ───────────────────────────────────────────────── */}
-      <aside className="w-44 shrink-0 bg-[#3c3c3c] flex flex-col select-none">
+      <aside className={`${sidebarOpen ? 'w-44' : 'w-8'} shrink-0 bg-[#3c3c3c] flex flex-col select-none transition-[width] duration-200`}>
+
+        {/* Toggle button — always visible */}
+        <button
+          onClick={() => setSidebarOpen(s => !s)}
+          title={sidebarOpen ? 'Collapse panel' : 'Expand panel'}
+          className="h-8 flex items-center justify-center hover:bg-[#555] transition-colors text-[#aaa] shrink-0"
+        >
+          {sidebarOpen
+            ? <ChevronLeft className="w-4 h-4" />
+            : <ChevronRight className="w-4 h-4" />}
+        </button>
+
+        {sidebarOpen && (<>
 
         {/* ── Main / Revisit toggle ─────────────────────────────── */}
         <div className="p-3 pb-0">
@@ -742,6 +756,7 @@ export default function Dashboard() {
           )}
         </div>
 
+        </>)}
       </aside>
 
       {/* ── Main content ──────────────────────────────────────────── */}
