@@ -55,13 +55,21 @@ async function cacheSet(key: string, entry: CacheEntry): Promise<void> {
   } catch { /* non-fatal */ }
 }
 
-// ── Proxy helper ──────────────────────────────────────────────────────────────
+// ── Request builder ───────────────────────────────────────────────────────────
+// Two modes:
+//   Proxy mode  — VITE_PROXY_URL is set  → route via proxy (token hidden server-side)
+//   Direct mode — VITE_KOBO_TOKEN is set → call KoBoToolbox API directly (Android)
 
-const PROXY_BASE = (import.meta.env.VITE_PROXY_URL as string | undefined)
-  ?? 'http://localhost:8765/proxy';
+const PROXY_BASE  = (import.meta.env.VITE_PROXY_URL  as string | undefined)?.trim() || '';
+const KOBO_TOKEN  = (import.meta.env.VITE_KOBO_TOKEN as string | undefined)?.trim() || '';
 
-function toProxyUrl(url: string): string {
-  return `${PROXY_BASE}?url=${encodeURIComponent(url)}`;
+function buildFetchArgs(url: string): [string, RequestInit] {
+  if (PROXY_BASE) {
+    return [`${PROXY_BASE}?url=${encodeURIComponent(url)}`, {}];
+  }
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (KOBO_TOKEN) headers['Authorization'] = `Token ${KOBO_TOKEN}`;
+  return [url, { headers }];
 }
 
 // ── KoBoToolbox JSON data fetch with pagination ───────────────────────────────
@@ -91,13 +99,19 @@ async function fetchAllPages(assetId: string): Promise<DataRow[]> {
     `${KOBO_BASE}/api/v2/assets/${assetId}/data/?format=json&limit=30000`;
 
   while (url) {
+    const [fetchUrl, fetchInit] = buildFetchArgs(url);
     let res: Response;
     try {
-      res = await fetch(toProxyUrl(url));
+      res = await fetch(fetchUrl, fetchInit);
     } catch {
+      if (PROXY_BASE) {
+        throw new Error(
+          'Cannot reach the proxy server. ' +
+          'Make sure kobo_proxy_server.py is running or the Render proxy service is live.'
+        );
+      }
       throw new Error(
-        'Cannot reach the proxy server. ' +
-        'Make sure kobo_proxy_server.py is running (locally) or the Render proxy service is live.'
+        'Cannot reach KoBoToolbox. Check your internet connection and try again.'
       );
     }
 
@@ -105,7 +119,6 @@ async function fetchAllPages(assetId: string): Promise<DataRow[]> {
 
     const json = await res.json() as { results?: Record<string, unknown>[]; next?: string | null };
     (json.results ?? []).forEach(r => all.push(normalizeRow(r)));
-
     url = json.next ?? null;
   }
 
