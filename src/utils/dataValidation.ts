@@ -36,6 +36,42 @@ function detectGpsColumns(row: Record<string, unknown>): { lat: string; lon: str
   return { lat: latCol, lon: lonCol };
 }
 
+// GPS_COMBINED_RE matches column names that likely hold a combined "lat lon alt acc" geopoint string.
+const GPS_COMBINED_RE = /gps|geopoint|location|coordinates/i;
+
+function resolveGps(
+  row: Record<string, unknown>,
+  latCol: string,
+  lonCol: string,
+): { lat: number | null; lon: number | null } {
+  // 1. Try the explicit component fields first
+  const latNum = parseFloat(String(row[latCol] ?? ''));
+  const lonNum = parseFloat(String(row[lonCol] ?? ''));
+  if (!isNaN(latNum) && !isNaN(lonNum) && latNum !== 0 && lonNum !== 0) {
+    return { lat: latNum, lon: lonNum };
+  }
+
+  // 2. Fallback: scan for a combined geopoint string (e.g. "12.3456 8.9012 500 3.2")
+  //    This handles the common KoBoToolbox case where the parent GPS field has the data
+  //    but the separate _latitude/_longitude component keys are null or absent.
+  for (const key of Object.keys(row)) {
+    if (!GPS_COMBINED_RE.test(key)) continue;
+    if (key === latCol || key === lonCol) continue;
+    const val = String(row[key] ?? '').trim();
+    if (!val || !val.includes(' ')) continue;
+    const parts = val.split(/\s+/);
+    if (parts.length < 2) continue;
+    const pLat = parseFloat(parts[0]);
+    const pLon = parseFloat(parts[1]);
+    if (!isNaN(pLat) && !isNaN(pLon) && pLat !== 0 && pLon !== 0 &&
+        Math.abs(pLat) <= 90 && Math.abs(pLon) <= 180) {
+      return { lat: pLat, lon: pLon };
+    }
+  }
+
+  return { lat: null, lon: null };
+}
+
 const START_COL_CANDIDATES = [
   'calc_first_visit_last_change',
   'calc_consent_last_change',
@@ -112,9 +148,13 @@ export function validateData(df: DataRow[]): ValidationRow[] {
   const startCol = findColumn(firstRow, START_COL_CANDIDATES);
   const endCol = findColumn(firstRow, END_COL_CANDIDATES);
 
-  // Auto-detect GPS columns
+  // Auto-detect GPS columns, then resolve actual lat/lon values for every row.
+  // resolveGps tries the component fields first (_FirstVisitGPS_latitude etc.) and
+  // falls back to parsing the combined KoBoToolbox geopoint string (e.g. FirstVisitGPS).
   const { lat: LAT_COL_USE, lon: LON_COL_USE } = detectGpsColumns(firstRow);
-  console.log('[AMF-PDM] GPS cols:', LAT_COL_USE, LON_COL_USE);
+  const resolvedGps = result.map(row => resolveGps(row, LAT_COL_USE, LON_COL_USE));
+  console.log('[AMF-PDM] GPS cols:', LAT_COL_USE, LON_COL_USE,
+    '| resolved valid:', resolvedGps.filter(g => g.lat !== null).length, '/', result.length);
 
   console.log('[AMF-PDM] All columns:', Object.keys(firstRow));
   console.log('[AMF-PDM] Detected startCol:', startCol, '→', firstRow[startCol ?? '']);
@@ -166,15 +206,10 @@ export function validateData(df: DataRow[]): ValidationRow[] {
     }
   });
 
-  // 3. GPS Check
-  result.forEach((row) => {
-    const lat = row[LAT_COL_USE];
-    const lon = row[LON_COL_USE];
-    const missing =
-      lat === null || lat === undefined || lat === '' ||
-      lon === null || lon === undefined || lon === '' ||
-      Number(lat) === 0 || Number(lon) === 0;
-    if (missing) {
+  // 3. GPS Check — uses pre-resolved lat/lon (handles combined geopoint fallback)
+  result.forEach((row, idx) => {
+    const { lat, lon } = resolvedGps[idx];
+    if (lat === null || lon === null) {
       row.GPS_Check = '❌ Missing Coordinates';
       row.Overall_Status = 'FLAGGED';
     }
@@ -191,10 +226,9 @@ export function validateData(df: DataRow[]): ValidationRow[] {
 
   // 5. Stackpoint Check — same exact lat/lon pair
   const coordMap = new Map<string, number[]>();
-  result.forEach((row, idx) => {
-    const lat = row[LAT_COL_USE];
-    const lon = row[LON_COL_USE];
-    if (lat && lon && Number(lat) !== 0 && Number(lon) !== 0) {
+  result.forEach((_, idx) => {
+    const { lat, lon } = resolvedGps[idx];
+    if (lat !== null && lon !== null) {
       const key = `${lat}|${lon}`;
       if (!coordMap.has(key)) coordMap.set(key, []);
       coordMap.get(key)!.push(idx);
@@ -210,13 +244,9 @@ export function validateData(df: DataRow[]): ValidationRow[] {
   });
 
   // 6. Proximity Check (~30m ≈ 0.0003 degrees)
-  const validCoords = result
-    .map((row, idx) => ({
-      idx,
-      lat: parseFloat(String(row[LAT_COL_USE] ?? '')),
-      lon: parseFloat(String(row[LON_COL_USE] ?? '')),
-    }))
-    .filter(({ lat, lon }) => !isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0);
+  const validCoords = resolvedGps
+    .map(({ lat, lon }, idx) => ({ idx, lat: lat ?? 0, lon: lon ?? 0 }))
+    .filter(({ lat, lon }) => lat !== 0 && lon !== 0);
 
   const PROX = 0.0003;
   const limit = Math.min(validCoords.length, 800);
