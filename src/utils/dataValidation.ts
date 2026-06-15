@@ -1,62 +1,40 @@
 import { DataRow, ValidationRow, ValidationSummary } from '../types';
 
-const LAT_COL = '_FirstVisitGPS_latitude';
-const LON_COL = '_FirstVisitGPS_longitude';
-
-const LAT_CANDIDATES = [
-  '_FirstVisitGPS_latitude', 'FirstVisitGPS_latitude',
-  '_GPS_latitude', 'GPS_latitude', 'gps_latitude',
-  '_latitude', 'latitude', 'Latitude', 'lat',
-];
-const LON_CANDIDATES = [
-  '_FirstVisitGPS_longitude', 'FirstVisitGPS_longitude',
-  '_GPS_longitude', 'GPS_longitude', 'gps_longitude',
-  '_longitude', 'longitude', 'Longitude', 'lon',
-];
-
-function detectGpsColumns(row: Record<string, unknown>): { lat: string; lon: string } {
-  let latCol = LAT_COL;
-  let lonCol = LON_COL;
-  for (const c of LAT_CANDIDATES) {
-    if (c in row) { latCol = c; break; }
-  }
-  if (!(latCol in row)) {
-    for (const key of Object.keys(row)) {
-      if (key.toLowerCase().includes('latitude')) { latCol = key; break; }
-    }
-  }
-  for (const c of LON_CANDIDATES) {
-    if (c in row) { lonCol = c; break; }
-  }
-  if (!(lonCol in row)) {
-    for (const key of Object.keys(row)) {
-      if (key.toLowerCase().includes('longitude')) { lonCol = key; break; }
-    }
-  }
-  return { lat: latCol, lon: lonCol };
-}
-
 // GPS_COMBINED_RE matches column names that likely hold a combined "lat lon alt acc" geopoint string.
 const GPS_COMBINED_RE = /gps|geopoint|location|coordinates/i;
 
-function resolveGps(
-  row: Record<string, unknown>,
-  latCol: string,
-  lonCol: string,
-): { lat: number | null; lon: number | null } {
-  // 1. Try the explicit component fields first
-  const latNum = parseFloat(String(row[latCol] ?? ''));
-  const lonNum = parseFloat(String(row[lonCol] ?? ''));
-  if (!isNaN(latNum) && !isNaN(lonNum) && latNum !== 0 && lonNum !== 0) {
-    return { lat: latNum, lon: lonNum };
+/**
+ * Resolves GPS coordinates from a row by scanning ALL column names.
+ * Does NOT depend on pre-detected column names — scans every key independently.
+ *
+ * Priority:
+ *   1. Any column whose name contains 'latitude' (case-insensitive) → lat value
+ *      Any column whose name contains 'longitude' (case-insensitive) → lon value
+ *   2. Combined geopoint string e.g. "12.3456 8.9012 500 3.2" from GPS/geopoint columns
+ */
+function resolveGps(row: Record<string, unknown>): { lat: number | null; lon: number | null } {
+  let lat: number | null = null;
+  let lon: number | null = null;
+
+  // Pass 1 — scan all column keys for latitude/longitude substrings
+  for (const key of Object.keys(row)) {
+    const k = key.toLowerCase();
+    if (lat === null && (k.includes('latitude') || k === 'lat')) {
+      const v = parseFloat(String(row[key] ?? ''));
+      if (!isNaN(v) && v !== 0 && Math.abs(v) <= 90) lat = v;
+    }
+    if (lon === null && (k.includes('longitude') || k === 'lon' || k === 'lng')) {
+      const v = parseFloat(String(row[key] ?? ''));
+      if (!isNaN(v) && v !== 0 && Math.abs(v) <= 180) lon = v;
+    }
+    if (lat !== null && lon !== null) return { lat, lon };
   }
 
-  // 2. Fallback: scan for a combined geopoint string (e.g. "12.3456 8.9012 500 3.2")
-  //    This handles the common KoBoToolbox case where the parent GPS field has the data
-  //    but the separate _latitude/_longitude component keys are null or absent.
+  if (lat !== null && lon !== null) return { lat, lon };
+
+  // Pass 2 — combined geopoint string (e.g. "12.3456 8.9012 500 3.2")
   for (const key of Object.keys(row)) {
     if (!GPS_COMBINED_RE.test(key)) continue;
-    if (key === latCol || key === lonCol) continue;
     const val = String(row[key] ?? '').trim();
     if (!val || !val.includes(' ')) continue;
     const parts = val.split(/\s+/);
@@ -148,17 +126,12 @@ export function validateData(df: DataRow[]): ValidationRow[] {
   const startCol = findColumn(firstRow, START_COL_CANDIDATES);
   const endCol = findColumn(firstRow, END_COL_CANDIDATES);
 
-  // Auto-detect GPS columns, then resolve actual lat/lon values for every row.
-  // resolveGps tries the component fields first (_FirstVisitGPS_latitude etc.) and
-  // falls back to parsing the combined KoBoToolbox geopoint string (e.g. FirstVisitGPS).
-  const { lat: LAT_COL_USE, lon: LON_COL_USE } = detectGpsColumns(firstRow);
-  const resolvedGps = result.map(row => resolveGps(row, LAT_COL_USE, LON_COL_USE));
-  console.log('[AMF-PDM] GPS cols:', LAT_COL_USE, LON_COL_USE,
-    '| resolved valid:', resolvedGps.filter(g => g.lat !== null).length, '/', result.length);
-
+  // Resolve GPS for every row — resolveGps scans all column keys independently,
+  // so it handles any column name variation without pre-detection.
+  const resolvedGps = result.map(row => resolveGps(row));
+  console.log('[AMF-PDM] GPS resolved valid:', resolvedGps.filter(g => g.lat !== null).length, '/', result.length);
   console.log('[AMF-PDM] All columns:', Object.keys(firstRow));
-  console.log('[AMF-PDM] Detected startCol:', startCol, '→', firstRow[startCol ?? '']);
-  console.log('[AMF-PDM] Detected endCol:  ', endCol,   '→', firstRow[endCol ?? '']);
+  console.log('[AMF-PDM] Detected startCol:', startCol, '| endCol:', endCol);
 
   // Calculate interview_duration from timestamps
   let durationCount = 0;
@@ -334,23 +307,20 @@ export function getValidationSummary(data: ValidationRow[]): ValidationSummary {
 }
 
 export function getMapData(data: ValidationRow[]) {
-  const { lat: LAT, lon: LON } = detectGpsColumns(data[0] ?? {});
   return data
-    .filter(
-      (r) => r.Stackpoint_Check !== 'PASS' || r.Proximity_Check !== 'PASS'
-    )
-    .map((r) => ({
-      lat: parseFloat(String(r[LAT] ?? '')),
-      lon: parseFloat(String(r[LON] ?? '')),
-      hhId: String(r['calc_household_id'] ?? 'N/A'),
-      stackpointIssue: r.Stackpoint_Check !== 'PASS',
-      proximityIssue: r.Proximity_Check !== 'PASS',
-      stackpointMsg: r.Stackpoint_Check,
-      proximityMsg: r.Proximity_Check,
-      village: String(r['calc_village_name'] ?? 'N/A'),
-    }))
-    .filter((r) => !isNaN(r.lat) && !isNaN(r.lon) && r.lat !== 0 && r.lon !== 0);
+    .filter((r) => r.Stackpoint_Check !== 'PASS' || r.Proximity_Check !== 'PASS')
+    .map((r) => {
+      const { lat, lon } = resolveGps(r);
+      return {
+        lat: lat ?? 0,
+        lon: lon ?? 0,
+        hhId: String(r['calc_household_id'] ?? 'N/A'),
+        stackpointIssue: r.Stackpoint_Check !== 'PASS',
+        proximityIssue: r.Proximity_Check !== 'PASS',
+        stackpointMsg: r.Stackpoint_Check,
+        proximityMsg: r.Proximity_Check,
+        village: String(r['calc_village_name'] ?? 'N/A'),
+      };
+    })
+    .filter((r) => r.lat !== 0 && r.lon !== 0);
 }
-
-export const LAT_COLUMN = LAT_COL;
-export const LON_COLUMN = LON_COL;
