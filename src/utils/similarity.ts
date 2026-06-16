@@ -1,5 +1,32 @@
 import { DataRow, ComparisonResult, SimilarityStats } from '../types';
 
+// Basic-check column candidates (mirrors the logic in dataValidation.ts)
+const BASIC_HH_COLS      = ['HouseholdFound', 'household_found', 'calc_household_found', 'hh_found'];
+const BASIC_FV_COLS      = ['FirstVisitPresent', 'first_visit_present', 'calc_first_visit_present', 'first_visit'];
+const BASIC_CONSENT_COLS = ['Consent', 'consent', 'calc_consent', 'respondent_consent'];
+
+function findBasicCol(row: DataRow, candidates: string[]): string | null {
+  for (const c of candidates) { if (c in row) return c; }
+  return null;
+}
+
+/** Returns true only for clean households that pass the basic check (HH found + consent given). */
+function isCleanHousehold(row: DataRow): boolean {
+  const hhFoundCol   = findBasicCol(row, BASIC_HH_COLS);
+  const firstVisitCol = findBasicCol(row, BASIC_FV_COLS);
+  const consentCol   = findBasicCol(row, BASIC_CONSENT_COLS);
+
+  const hhFound    = hhFoundCol    ? String(row[hhFoundCol]    ?? '').toLowerCase() : null;
+  const firstVisit = firstVisitCol ? String(row[firstVisitCol] ?? '').toLowerCase() : null;
+  const consent    = consentCol    ? String(row[consentCol]    ?? '').toLowerCase() : null;
+
+  const hhFail         = hhFound    !== null && !hhFound.includes('yes')    && hhFound    !== 'null';
+  const firstVisitFail = firstVisit !== null && !firstVisit.includes('yes') && !firstVisit.includes('no_but_will_return') && firstVisit !== 'null';
+  const consentFail    = consent    !== null && !consent.includes('yes')    && consent    !== 'null';
+
+  return !(hhFail || firstVisitFail || consentFail);
+}
+
 // Display label → actual Excel column name
 export const TARGET_VARIABLE_MAP: Record<string, string> = {
   'How many people are there in this household?': 'Householders',
@@ -25,9 +52,10 @@ export function runSimilarityCheck(
   revisitData: DataRow[],
   lgaFilter?: string
 ): { comparisons: ComparisonResult[]; stats: SimilarityStats[] } {
-  let filtered = mainData;
+  // Only compare clean households — exclude Basic Error (HH/Consent) rows
+  let filtered = mainData.filter(isCleanHousehold);
   if (lgaFilter && lgaFilter !== 'All') {
-    filtered = mainData.filter((r) => String(r['calc_l4_name'] ?? '') === lgaFilter);
+    filtered = filtered.filter((r) => String(r['calc_l4_name'] ?? '') === lgaFilter);
   }
 
   const revisitIndex = new Map<string, DataRow>();

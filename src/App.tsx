@@ -32,7 +32,7 @@ export default function App() {
 
       <footer className="py-4 border-t border-slate-200 bg-white">
         <p className="text-center text-xs text-slate-400">
-          EHA-(AMF-PDM) Survey Data Quality Monitoring Analyser · Against Malaria Foundation · 2025
+          EHA-(AMF-PDM) Survey Data Quality Monitoring Analyser · Against Malaria Foundation · 2026
         </p>
       </footer>
     </div>

@@ -109,26 +109,6 @@ export default function LoginPage({ onLogin }: Props) {
               <p className="text-slate-400 text-xs mt-0.5">EHA-(AMF-PDM) · Survey Platform</p>
             </div>
 
-            {/* Credentials hint */}
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5 mb-5">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className="w-4 h-4 rounded-full bg-primary-500 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">i</span>
-                </div>
-                <p className="text-xs font-bold text-primary-700 uppercase tracking-wide">Demo Credentials</p>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">Username</span>
-                  <code className="text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-mono font-bold text-slate-700 shadow-sm">amf_pdm</code>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">Password</span>
-                  <code className="text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-mono font-bold text-slate-700 shadow-sm">admin</code>
-                </div>
-              </div>
-            </div>
-
             {/* Form */}
             <div className="space-y-3.5">
               <div>
