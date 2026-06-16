@@ -22,7 +22,7 @@ export default function App() {
           <Dashboard />
         </div>
       ) : (
-        <main className="max-w-screen-2xl mx-auto px-4 py-6 w-full">
+        <main className="max-w-screen-2xl mx-auto px-3 py-4 sm:px-4 sm:py-6 w-full">
           <div className="animate-fade-in">
             {activeTab === 'comparison' && <DataComparison />}
             {activeTab === 'quality'    && <DataQuality />}

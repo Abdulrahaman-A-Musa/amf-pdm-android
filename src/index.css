@@ -29,7 +29,7 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,144,252,0.06), 0 0 0 1px rgba(0,0,0,0.02);
   }
   .card-header {
-    @apply px-6 py-4 rounded-t-2xl flex items-center;
+    @apply px-4 py-3 sm:px-6 sm:py-4 rounded-t-2xl flex items-center;
     background: linear-gradient(135deg, #1a3a6b 0%, #0077e6 100%);
     border-bottom: 1px solid rgba(255,255,255,0.1);
   }
